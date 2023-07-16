@@ -27,7 +27,10 @@ class GenerateInvoice {
         $pdf = new InvoicePrinter(InvoicePrinter::INVOICE_SIZE_A4, $invoice_data['Currency'].' ');
         $img = realpath(BASEPATH.'/public/'.IMAGES.'/logo.jpg');
 
-        $pdf->setLogo($img);
+        if ( file_exists($img))
+            $pdf->setLogo($img);
+            
+        $color = Helper::env('invoice_color', '#007fff');
         $pdf->setColor("#007fff");
         $pdf->setType("Invoice");
         $pdf->setReference("INV-$id");

@@ -31,7 +31,7 @@ class Settings extends BaseController {
         $form->text('invoice_footer', ['value'=>$this->get_value('invoice_footer')]);
         $form->text('default_currency', ['value'=>$this->get_value('default_currency','USD')]);
         $form->number('default_tax', ['value'=>$this->get_value('default_tax', 0), 'min'=>0]);
-        $form->html('<br>')->submit('submit');
+        $form->html('<br>')->button('submit', '<i class="bi bi-check-circle"></i> save', '', 'submit');
  
         if ( $form->submitted() ) {
             $data = $form->validate('company_name,company_adress,company_email,invoice_footer,default_currency,default_tax');

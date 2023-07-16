@@ -116,8 +116,10 @@ Router::instance()->run();
 ```
 
 ### FAQ
+#### I cannot login
 If the configuration of a client changes, or a new computer is purchased that is not recognized, a new registration will be provided. Click this registration link in your mail and use your keycode file as usual. 
 
+#### How can i extend the application
 If you want to extend the application, set:
 
 1. a model in "app\models
@@ -126,3 +128,9 @@ If you want to extend the application, set:
 4. add a new route in "app\libs\Routes
    
 Details about the usage of "DBCrud" can be found in "app\libs\dbgrid\readme.md" and "Formbuilder" in "app\libs\Formbuilder\readme.md".
+
+#### How can i change the invoice company log
+The logo is store in the public folder "\public\img\logo.png". If you delete or rename it, no logo will be printet. Or you can replace it with your own design.
+
+#### Can i change the invoice color ?
+For now, you can change the invoice color in the config.php file.

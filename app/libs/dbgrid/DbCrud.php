@@ -17,15 +17,15 @@ use helper\Helper;
 use helper\Session;
 
 class DbCrud {
-    public string $grid_add = '<a class="btn btn-primary" href="[:script_name]/add" role="button">Add</a>';    
-    public string $grid_show = '<a class="btn btn-primary btn-sm" href="[:script_name]/show/[:identifier]" role="button">Show</a>';
-    public string $grid_edit = '<a class="btn btn-primary btn-sm" href="[:script_name]/edit/[:identifier]" role="button">Edit</a>';
-    public string $grid_delete = '<a class="btn btn-danger btn-sm" href="[:script_name]/delete/[:identifier]" role="button">Delete</a>';
-    public string $grid_search = '<form class="d-flex method="post"> <input class="form-control" type="search" name="search" value="[:search]" placeholder="Search" aria-label="Search"><a href="[:script_name]/clear" style="margin: 0 10px 0 -20px; display: inline-block;" title="Clear Search">x</a> <input type="submit" name="search_submit" value="Search" id="search_submit" class="btn btn-primary"/> </form>';
+    public string $grid_add = '<a class="btn btn-primary" href="[:script_name]/add" role="button"><i class="bi bi-plus-circle"></i> Add</a>';    
+    public string $grid_show = '<a class="btn btn-info btn-sm" href="[:script_name]/show/[:identifier]" role="button"><i class="bi bi-eyeglasses"></i> Show</a>';
+    public string $grid_edit = '<a class="btn btn-warning btn-sm" href="[:script_name]/edit/[:identifier]" role="button"><i class="bi bi-pen"></i> Edit</a>';
+    public string $grid_delete = '<a class="btn btn-danger btn-sm" href="[:script_name]/delete/[:identifier]" role="button"><i class="bi bi-trash"></i> Delete</a>';
+    public string $grid_search = '<form class="d-flex method="post"> <input class="form-control" type="search" name="search" value="[:search]" placeholder="Search" aria-label="Search"><a href="[:script_name]/clear" style="margin: 0 10px 0 -20px; display: inline-block;" title="Clear Search">x</a> <button class="btn btn-primary" name="search_submit" type="submit"><i class="bi bi-search"></i></button> </form>';
     public string $grid_title = '';
-    public string $form_save = 'save';
-    public string $form_back = 'back';
-    public string $form_delete = 'delete';
+    public string $form_save = '<i class="bi bi-check-circle"></i> save';
+    public string $form_back = '<i class="bi bi-arrow-left"></i> back';
+    public string $form_delete = '<i class="bi bi-trash"></i> delete';
 
     public int $limit = 100;                        // sql selection limit for one page
     public string $grid_sql = '';                   // sql from grid selection

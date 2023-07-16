@@ -1,13 +1,13 @@
 input.form-control[readonly], select.form-select[readonly], textarea.form-control[readonly], input.form-check-input[readonly]
 {
-    background-color:rgb(213, 173, 86);
+    background-color:rgb(132, 201, 159);
 }
 input.form-control, select.form-select, textarea.form-control, input.form-check-input
 {
-    background-color:rgb(242, 243, 209);
+    background-color:rgb(226, 246, 202);
 }
 input[readonly].title {
-    background-color: rgb(157, 110, 10);
+    background-color: rgb(46, 134, 115);
     font-weight: bold;
     color: white;
 }
@@ -16,27 +16,28 @@ input[readonly].title {
     display:none;
 }
 #page {
-    background-image: linear-gradient(to right, rgb(227, 232, 169), #f4ebd0);
+    background-image: linear-gradient(to right, rgb(208, 232, 169), rgb(208, 232, 169));
 }
 
 a.list-group-item {
-    background-color: rgb(242, 243, 209);
+    background-color: rgb(226, 246, 202);
 }
 
 a.list-group-item:hover {
-    background-color: rgb(213, 173, 86);
+    background-color: rgb(132, 201, 159);
 }
 
 .dbc-table {
-    background-color: rgb(213, 173, 86); 
+    background-color: rgb(132, 201, 159); 
 }
 
 .dbc-headerbar {
-    background-color: rgb(213, 173, 86); 
+    background-color: rgb(132, 201, 159); 
 }
 
 .dbc-table thead {
-    background-color: rgb(157, 110, 10);
+    background-color: rgb(46, 134, 115);
+    color: white !important; 
 }
 
 .dbv-table {
@@ -66,12 +67,12 @@ legend.border {
 }
 
 a.page-link {
-    background-color: rgb(213, 173, 86); 
+    background-color: rgb(132, 201, 159); 
     color:rgb(0, 0, 0);
 }
 
 .page-item.active .page-link {
-    background-color: rgb(157, 110, 10) !important; 
+    background-color: rgb(46, 134, 115) !important; 
 }
 
 .dropdown .dropdown-menu {
