@@ -5,6 +5,8 @@ A simple, lightweight web application to manage customer data and products and c
 Although this is a feasibility study for fast web development, the application is fully functional and can be easily extended.
 
 The application runs on both SQLite and MySQL databases. If web connectivity is not desired, the application can also run on a local computer using PHP's own built-in-server.
+ 
+[Demo without login](http://invoice.expandmade.com/) (no login needed)
 
 ## Installation
 
@@ -134,3 +136,14 @@ The logo is store in the public folder "\public\img\logo.png". If you delete or 
 
 #### Can i change the invoice color ?
 For now, you can change the invoice color in the config.php file.
+
+#### How can run the application local ?
+For this you need to have PHP 8.x and SQLite installed ! Open a terminal and change to the public folder. There enter:
+
+*php -S localhost:8000*
+
+The response wil be something like:
+
+PHP 8.1.21 Development Server (http://localhost:8000) started
+
+Enter the given link in your browser. Done !
