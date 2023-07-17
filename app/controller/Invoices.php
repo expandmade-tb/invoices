@@ -12,7 +12,6 @@ class Invoices extends BaseController {
 
     function __construct() {
         parent::__construct();
-        $this->data['js_files'][] = JAVASCRIPT.'/livesearch.js';
 
         $this->crud = new DbCrud(new invoices_model());
         $this->crud->grid_show = '<a class="btn btn-success btn-sm" href="[:script_name]/print/[:identifier]" role="button"><i class="bi bi-file-pdf"></i> Print</a>';
@@ -30,7 +29,6 @@ class Invoices extends BaseController {
         $this->crud->fieldType('Payed_Date', 'datetext');
         $this->crud->fieldType('Billing_Adress', 'textarea', '', 4);
 
-        $this->crud->fieldPlaceholder('CustomerId', 'type and search for a customer name');
         $this->crud->fieldPlaceholder('Billing_Name', 'leave blank to use customers name');
         $this->crud->fieldPlaceholder('Billing_Adress', 'leave blank to use customers adress');
         $this->crud->fieldPlaceholder('Billing_Email', 'leave blank to use customers email');
@@ -47,7 +45,7 @@ class Invoices extends BaseController {
         $this->crud->fieldValue('Tax', $value !== false ? $value : 0);
         
         $this->crud->setRelation('Currency', 'Currency', 'Currencies');
-        $this->crud->setSearchRelation('CustomerId', 'Customers', 'Name');
+        $this->crud->setRelation('CustomerId', 'Name', 'Customers');
         $this->crud->setContstraints('InvoiceId', 'InvoicesDetails', 'InvoiceId');
         $this->crud->linkedTable('InvoicesDetails', 'Invoice Items', 'selectinvoice');
     }

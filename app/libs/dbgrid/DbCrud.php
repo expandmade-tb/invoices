@@ -2,7 +2,7 @@
 
 /**
  * CRUD for sqlite database tables
- * Version 1.14.0
+ * Version 1.15.0
  * Author: expandmade / TB
  * Author URI: https://expandmade.com
  */
@@ -60,6 +60,8 @@ class DbCrud {
     protected array $uri = [];                      // current uri split into its parts
     private array $linked_table = [];               // store the controller + method to link with a button in edit mode
     private array $constraints = [];                // stores a list of fields which do have depending tables ( parent -> child)
+    private string $ajax_controller = 'livesearch';         // controller to call on ajax / rest requests
+    private string $ajax_js_function = 'livesearchResults'; // js function to use on ajax / rest requests
 
 
     public function __construct(DBTable $table) {
@@ -153,8 +155,14 @@ class DbCrud {
         return $this;
     }
 
-    public function fieldOnChange(string $field, string $js_function) : DbCrud {
-        $this->field_onchange[$field] = $js_function;
+    public function fieldOnChange(string $field, string $url, string $js_function) : DbCrud {
+        $this->field_onchange[$field] = ['url'=>$url, 'js_function'=>$js_function];
+        return $this;
+    }
+
+    public function setAjaxDefaults(string $controller, string $js_function) : DbCrud{
+        $this->ajax_controller = $controller;
+        $this->ajax_js_function = $js_function;
         return $this;
     }
 
@@ -458,8 +466,8 @@ class DbCrud {
             $ajax_token = $this->token();
 
             if ( !empty($this->field_onchange[$field]) ) {
-                $js_function = $this->field_onchange[$field];
-                $url = helper::url();
+                $url = $this->field_onchange[$field]['url'];
+                $js_function = $this->field_onchange[$field]['js_function'];
                 $onchange = " onchange=\"$js_function(this, '$url', '$ajax_token')\"";
             }
             else
@@ -550,8 +558,8 @@ class DbCrud {
                             $value = $result[$rel_field];
                     }
     
-                    $controller = "'/livesearch/$rel_table'";
-                    $form->search($field, ['label'=>$label, 'value'=>$value, 'string'=>$readonly.$placeholder],"livesearchResults(this, $controller, '$ajax_token')"); // onchange cannot be used here !
+                    $controller = "'/$this->ajax_controller/$rel_table'";
+                    $form->search($field, ['label'=>$label, 'value'=>$value, 'string'=>$readonly.$placeholder],"$this->ajax_js_function(this, $controller, '$ajax_token')");
                     break;
                 case 'grid':
                     $values = json_decode($value, true);

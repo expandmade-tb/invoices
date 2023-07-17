@@ -13,7 +13,7 @@ class InvoicesDetails extends BaseController {
 
     function __construct() {
         parent::__construct();
-        $this->data['js_files'][] = JAVASCRIPT.'/livesearch.js';
+        $this->data['js_files'][] = JAVASCRIPT.'/livesearch.min.js';
        
         $this->crud = new DbCrud(new invoices_details_model());
         $this->crud->grid_show = '';
@@ -21,10 +21,13 @@ class InvoicesDetails extends BaseController {
         $this->crud->form_delete = '';
         $this->crud->limit = 15;
         $this->crud->callbackInsert([$this, 'onInsert']);
-        $this->crud->fields('ProductId,Qty,Price');
+        $this->crud->editFields('ProductId,Qty,Price');
+        $this->crud->addFields('ProductId,Qty,Price');
+        $this->crud->gridFields('ProductId,Item,Qty,Price');
         $this->crud->fieldValue('Qty', 1);
-        $this->crud->setSearchRelation('ProductId', 'Products', 'Item');
-        $this->crud->fieldTitles('ProductId','Product');
+        $this->crud->setRelation('ProductId', 'Item', 'Products');
+        $this->crud->fieldOnChange('ProductId', '/livesearch/ProductByItem', 'product_onchange');
+        $this->crud->fieldTitles('ProductId,Item,Qty,Price','Product No.,Item,Qty,Price');
         $this->crud->fieldPlaceholder('Price', 'leave blank to accept original product price');
     }
 

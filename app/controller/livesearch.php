@@ -60,4 +60,20 @@ class livesearch extends BaseController {
         foreach ($results as $key => $value) 
             echo '<li class="dropdown-item" onclick="livesearchSelect(this);">'.$value.'</li>';
     }
+
+    public function ProductByItem() {
+        if ( $this->filter('') === false ) {
+            echo 'doing it wrong';
+            return;           
+        }
+
+        $item = $_GET['item']??'';
+
+        if (empty($item) )
+            return;
+
+        $table = new DBTable('Products');
+        $result = $table->where('Item', $item)->findFirst();
+        echo $result['Price']??'';
+    }
 }
