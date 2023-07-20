@@ -6,7 +6,7 @@
  from 
     InvoicesDetails
 LEFT JOIN 
-	Products on Products.ProductId = InvoicesDetails.InvoiceDetailId
+	Products on Products.ProductId = InvoicesDetails.ProductId
  where 
 	InvoiceId = ?
  order by

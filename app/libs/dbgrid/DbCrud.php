@@ -2,7 +2,7 @@
 
 /**
  * CRUD for sqlite database tables
- * Version 1.15.0
+ * Version 1.16.0
  * Author: expandmade / TB
  * Author URI: https://expandmade.com
  */
@@ -60,9 +60,6 @@ class DbCrud {
     protected array $uri = [];                      // current uri split into its parts
     private array $linked_table = [];               // store the controller + method to link with a button in edit mode
     private array $constraints = [];                // stores a list of fields which do have depending tables ( parent -> child)
-    private string $ajax_controller = 'livesearch';         // controller to call on ajax / rest requests
-    private string $ajax_js_function = 'livesearchResults'; // js function to use on ajax / rest requests
-
 
     public function __construct(DBTable $table) {
         $this->table = $table;
@@ -155,14 +152,9 @@ class DbCrud {
         return $this;
     }
 
-    public function fieldOnChange(string $field, string $url, string $js_function) : DbCrud {
-        $this->field_onchange[$field] = ['url'=>$url, 'js_function'=>$js_function];
-        return $this;
-    }
-
-    public function setAjaxDefaults(string $controller, string $js_function) : DbCrud{
-        $this->ajax_controller = $controller;
-        $this->ajax_js_function = $js_function;
+    public function fieldOnChange(string $field, string $rel_table, array $mapping) : DbCrud {
+        $this->field_onchange[$field] = ['mapping'=>$mapping, 'rel_table'=>$rel_table];
+        JsScript::instance()->add_script('onchange');
         return $this;
     }
 
@@ -212,6 +204,7 @@ class DbCrud {
 
     public function setSearchRelation(string $field, string $relatedTable, string $relatedField, bool $constraint=true) : DbCrud {
         $this->field_types[$field] = ['type'=>'search', 'rel_table'=>$relatedTable, 'rel_field'=>$relatedField, 'constraint'=>$constraint]; 
+        JsScript::instance()->add_script('searchrelation');
         return $this;
     }
 
@@ -466,9 +459,11 @@ class DbCrud {
             $ajax_token = $this->token();
 
             if ( !empty($this->field_onchange[$field]) ) {
-                $url = $this->field_onchange[$field]['url'];
-                $js_function = $this->field_onchange[$field]['js_function'];
-                $onchange = " onchange=\"$js_function(this, '$url', '$ajax_token')\"";
+                $rel_table = $this->field_onchange[$field]['rel_table'];
+                $controller = JsScript::instance()->add_var("/clientRequests/{$rel_table}");
+                $mapping = JsScript::instance()->add_var(json_encode($this->field_onchange[$field]['mapping']));
+                JsScript::instance()->var('token', $ajax_token);
+                $onchange = " onchange=\"form_field_onchange(this, $controller, $mapping, token)\"";
             }
             else
                 $onchange='';
@@ -532,6 +527,7 @@ class DbCrud {
                     $rel_field = $this->field_types[$field]['rel_field'];
                     $table = new DBTable($rel_table);
                     $values = $table->orderby($rel_field)->findColumn($rel_field);
+                    array_unshift($values, '');
 
                     if ( !empty($value) ) {
                         $result = $table->find($value);
@@ -557,9 +553,10 @@ class DbCrud {
                         else
                             $value = $result[$rel_field];
                     }
-    
-                    $controller = "'/$this->ajax_controller/$rel_table'";
-                    $form->search($field, ['label'=>$label, 'value'=>$value, 'string'=>$readonly.$placeholder],"$this->ajax_js_function(this, $controller, '$ajax_token')");
+                    
+                    JsScript::instance()->var('token', $ajax_token);
+                    $var = JsScript::instance()->add_var("clientRequests/{$rel_table}Search");
+                    $form->search($field, ['label'=>$label, 'value'=>$value, 'string'=>$readonly.$placeholder],"searchrelationResults(this, $var, token)");
                     break;
                 case 'grid':
                     $values = json_decode($value, true);
@@ -640,7 +637,8 @@ class DbCrud {
         }
 
         $form->button_bar($btn_bar['names'],$btn_bar['values'],$btn_bar['onclicks'],$btn_bar['types'],$btn_bar['strings'],);
-        return '<div id="dbc-container">'.$form->render().'</div>';
+
+        return '<div id="dbc-container">'.$form->render().'</div>'.JsScript::instance()->generate();
     }
 
     /**

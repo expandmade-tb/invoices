@@ -2,7 +2,7 @@
 
 /**
  * Grid for database tables
- * Version 1.1.0
+ * Version 1.1.1
  * Author: expandmade / TB
  * Author URI: https://expandmade.com
  */
@@ -101,7 +101,7 @@ class DbGrid {
         return $this;
     }
 
-    public function fieldType (string $field, string $type, string $valuelist='') : DbGrid {
+    public function fieldType (string $field, string $type, string $valuelist='', int $rows=2, int $cols=40) : DbGrid {
         if ( !in_array($type, ['text', 'integer', 'numeric', 'checkbox', 'select', 'date', 'datetext', 'datetime', 'datalist', 'textarea', 'timetext','grid']) )
             throw new Exception("unsupported field type $type");
             

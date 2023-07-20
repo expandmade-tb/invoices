@@ -19,7 +19,7 @@ class Routes {
         'users' => ['GET|POST|Users', 'index,add,edit,delete,grid,clear,show'],
         'upgrade' => ['GET|POST|Upgrade', 'index'],
         'settings' => ['GET|POST|Settings', 'index'],
-        'livesearch' => 'GET|livesearch',
+        'clientRequests' => 'GET|clientRequests',
     ];
 
     public static array $auth_exceptions = [
