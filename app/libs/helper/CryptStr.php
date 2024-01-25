@@ -2,6 +2,12 @@
 
 namespace helper;
 
+/** 
+ * Version 1.1.1
+ * Author: expandmade / TB
+ * Author URI: https://expandmade.com
+ */
+
 class CryptStr {
     protected static string $ENCRYPTION_ALGORITHM = 'AES-256-CBC';
     protected static string $HASHING_ALGORITHM = 'sha256';
@@ -15,10 +21,33 @@ class CryptStr {
     public static function instance (string $secret) : CryptStr {
         if ( self::$instance == null )
             self::$instance = new CryptStr($secret);
-   
+        else
+            if ( !empty($secret) )
+                (self::$instance)->set_secret($secret);
+
         return self::$instance;
     }
-    
+
+    /**
+     * Returns the current secret
+     *
+     * @return string
+     */
+    public function get_secret(): string {
+        return $this->secret;
+    }
+       
+    /**
+     * sets the new secret
+     *
+     * @param string $secret the new secret to be set
+     *
+     * @return void
+     */
+    public function set_secret(string $secret) {
+        $this->secret = $secret;
+    }
+
     /**
      * Decrypts a string using the application secret.
      *
