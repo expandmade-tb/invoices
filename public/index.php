@@ -18,8 +18,8 @@ Autoloader::instance();
 helper::init_env();
 
 // login required
-Router::instance()->setAuth('auth', [Helper::class,'is_logged_in'] )->run();
+// Router::instance()->setAuth('auth', [Helper::class,'is_logged_in'] )->run();
 
 // NO login required
-//helper::is_logged_in();
-//Router::instance()->run();
+helper::is_logged_in();
+Router::instance()->run();

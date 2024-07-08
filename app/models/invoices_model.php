@@ -4,6 +4,7 @@ namespace models;
 
 use database\DBTable;
 use database\DbDDL;
+use helper\Helper;
 
 class invoices_model extends DBTable {
     protected string $name = 'Invoices';
@@ -22,7 +23,24 @@ class invoices_model extends DBTable {
 			->text('Billing_Email')
 			->text('Instructions')
 			->text('Invoice_PDF')
+			->integer("Printed")
+			->integer("Canceled")
 			->foreign_key('Currency', 'Currencies', 'Currency')
 			->foreign_key('CustomerId', 'Customers', 'CustomerId');
     }
+
+	public function printed(int $id) : bool {
+        if ( Helper::transient('print_constraint') != 'true')
+			return false;
+
+		$result = $this->find($id);
+
+		if ( $result === false)
+			return false;
+
+		if ( empty($result['Printed']))
+			return false;
+		else
+			return true;
+	}
 }

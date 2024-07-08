@@ -2,7 +2,7 @@
 
 /**
  * base class for sqlite3 database tables
- * Version 1.11.0
+ * Version 1.11.3
  * Author: expandmade / TB
  * Author URI: https://expandmade.com
  */
@@ -133,7 +133,7 @@ class DBTableSQ3 implements IDBTable, IDBView {
             if ( !isset($value) )
                 continue;
 
-            if ( ($empty_is_null === true) && is_string($value) && empty($value) )
+            if ( ($empty_is_null === true) && is_string($value) && empty($value) && ($value !== '0') )
                 continue;
 
             if ( !isset($this->fields[$field]) )
@@ -333,7 +333,7 @@ class DBTableSQ3 implements IDBTable, IDBView {
         if ( empty($select) )
             $sql = "SELECT * $include_rowid FROM $this->name ";
         else
-            $sql = preg_replace('/[\n ]+from /i', $include_rowid.' from ', $select);
+            $sql = preg_replace('/\bfrom/i', $include_rowid.' from ', $select);
 
         $params = $prepared_params;
 
@@ -384,6 +384,8 @@ class DBTableSQ3 implements IDBTable, IDBView {
 
         if ( empty($select) )
             $sql = "SELECT $column FROM $this->name ";
+        else
+            $sql = "$select FROM $this->name ";
 
         if ( !empty($this->where_str) ) 
             $sql .= " WHERE $this->where_str";

@@ -2,7 +2,7 @@
 
 /**
  * Users Maintenance Controller
- * Version 1.1.2
+ * Version 1.3.0
  * Author: expandmade / TB
  * Author URI: https://expandmade.com
  */
@@ -13,6 +13,7 @@ use dbgrid\DbCrud;
 use helper\CryptStr;
 use helper\Helper;
 use helper\Session;
+use models\user_clients_model;
 use models\users_model;
 
 class Users extends BaseController {
@@ -24,12 +25,12 @@ class Users extends BaseController {
         $this->crud = new DbCrud(new users_model());
         $this->crud->grid_delete = '';
         $this->crud->grid_show = '';
-        $this->crud->addFields('Name,Mail,AccessControl,ValidUntil');
-        $this->crud->editFields('UserId,ClientId,Name,Mail,AccessControl,ValidUntil');
+        $this->crud->addFields('Name,Mail,AccessControl,RoleId,ValidUntil');
+        $this->crud->editFields('UserId,ClientId,Name,Mail,AccessControl,RoleId,ValidUntil');
         $this->crud->gridFields('UserId,Name,Mail,ValidUntil');
         $this->crud->readonlyFields('UserId,ClientId');
-        $this->crud->fieldType('ValidUntil', 'datetext');
-        $this->crud->fieldPlaceholder('ValidUntil', 'YYYY-MM-DD');
+        $this->crud->fieldType('ValidUntil', 'date');
+        $this->crud->setRelation('RoleId', 'Name', 'Roles');
         $this->crud->searchFields('Name,Mail');
 
         $this->crud->fieldTitles(
@@ -104,6 +105,8 @@ class Users extends BaseController {
         if ( $id == Session::instance()->get('user_id', 'unkwonw') ) 
             $this->data['dbgrid'] = $this->crud->form('edit', $id, 'you can NOT delete yourself');
         else {
+            $user_clients = new user_clients_model();
+            $user_clients->delete_all($id);
             $this->crud->delete($id);
             $this->data['dbgrid'] = $this->crud->grid();
         }

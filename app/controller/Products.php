@@ -19,6 +19,7 @@ class Products extends BaseController {
         $this->crud->gridFields('ProductId,Item,Descriptioin,Price');
         $this->crud->addFields('Item,Descriptioin,Price');
         $this->crud->editFields('ProductId,Item,Descriptioin,Price');
+        $this->crud->searchFields('Item,Descriptioin');
         $this->crud->fieldTitles('ProductId','Product No');
         $this->crud->setContstraints('ProductId', 'InvoicesDetails', 'ProductId');
     }

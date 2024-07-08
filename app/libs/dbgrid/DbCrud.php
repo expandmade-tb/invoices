@@ -1,8 +1,8 @@
 <?php
 
 /**
- * CRUD for sqlite database tables
- * Version 1.16.0
+ * CRUD for database tables
+ * Version 1.19.0
  * Author: expandmade / TB
  * Author URI: https://expandmade.com
  */
@@ -59,7 +59,10 @@ class DbCrud {
     protected string $grid_info = '';               // shows an information at the top of the grid
     protected array $uri = [];                      // current uri split into its parts
     private array $linked_table = [];               // store the controller + method to link with a button in edit mode
+    private array $subform = [];                    // store the controller + method to handle a subform
     private array $constraints = [];                // stores a list of fields which do have depending tables ( parent -> child)
+    private array $rows = [];                       // grid layout for form
+    private mixed $callbackException;               // callback on exceptions
 
     public function __construct(DBTable $table) {
         $this->table = $table;
@@ -138,7 +141,10 @@ class DbCrud {
     public function fieldType (string $field, string $type, string $valuelist='', int $rows=2, int $cols=40) : DbCrud {
         if ( !in_array($type, ['text', 'integer', 'numeric', 'checkbox', 'select', 'date', 'datetext', 'datetime', 'datalist', 'textarea', 'timetext','grid']) )
             throw new Exception("unsupported field type $type");
-            
+
+        if ( $type == 'checkbox' && empty($valuelist ) )
+            $valuelist = '0,1';
+             
         if ( in_array($type, ['grid','textarea']) )
             $this->field_types[$field] = ['type'=>$type, 'values'=>$valuelist, 'rows'=>$rows, 'cols'=>$cols];
         else
@@ -221,6 +227,21 @@ class DbCrud {
         return $this;
     }
 
+    public function subForm(callable $controller, string $button_value) : DbCrud {
+        unset($this->subform);
+        $this->subform['callback'] = $controller;
+        $this->subform['button_value'] = $button_value;
+        return $this;
+    }
+
+    public function onException(callable $callback) : void {
+        $this->callbackException = $callback;
+    }
+
+    public function layout_grid(array $rows) : void {
+        $this->rows = $rows;
+    }
+
     public function setContstraints(string $field, string $depending_table, string $depending_field) : DbCrud {
         $this->constraints[$field] = ['table'=>$depending_table,  'field'=>$depending_field];
         return $this;
@@ -268,8 +289,18 @@ class DbCrud {
         $deletelink = "$grid_to/delete/$link_id";
         $form_action = '/'.$this->uri['path'];
 
+        if ( empty($wrapper) ) // default wrapper
+            if ( !empty($this->rows) )
+                $wrapper = 'bootstrap-inline';
+            else
+                $wrapper = 'bootstrap-h-sm';
+
         // start the form
-        $form = new Formbuilder($this->table->name(), ['action'=>$form_action, 'wrapper'=>empty($wrapper) ? 'bootstrap-h-sm' : $wrapper]);
+        $subform_requested = (htmlspecialchars($_REQUEST["subform"]??'') === 'true');
+        $form = new Formbuilder($this->table->name(), ['action'=>$form_action, 'wrapper'=>$wrapper]);
+        $disabled_main_form = $subform_requested === true ? 'disabled' : '';
+        $form->fieldset_open('', $disabled_main_form);
+
         // overwrite date and time formats from grid
         $form->date_format = $this->date_fmt;
         $form->time_format = $this->time_fmt;
@@ -280,7 +311,7 @@ class DbCrud {
 
         // === 2. form submitted === 
 
-        if ( $form->submitted() ) { // if submitted we can apply rules and validate
+        if ( $form->submitted() && isset($_POST["mainform-save"]) ) { // if submitted we can apply rules and validate
             foreach ($fields as $key => $field) { // apply basic rules
 
                 if ( $this->table->fields($field)['required'] ) // meta data required fields
@@ -346,7 +377,7 @@ class DbCrud {
                             if ( empty($value) )
                                 $data[$field] = null;
                             else
-                                $data[$field] = (empty($value) === true) ? $value : strtotime($value) - strtotime('TODAY'); 
+                                $data[$field] = strtotime($value) - strtotime('TODAY'); 
 
                             break;
                         case 'checkbox':
@@ -408,7 +439,16 @@ class DbCrud {
                     Helper::redirect($backlink); // redirect to grid controller
                     return '';
                 } catch (\Throwable $th) {
-                    $form->message($th->getMessage());
+                    if ( !empty($this->callbackException) ) {
+                        $result = call_user_func($this->callbackException, $th);
+
+                        if ( is_string($result) )
+                            $form->message($result);
+                        else
+                            $form->message($th->getMessage());
+                    }
+                    else
+                        $form->message($th->getMessage());
                 }
             }
         }
@@ -459,9 +499,14 @@ class DbCrud {
             $ajax_token = $this->token();
 
             if ( !empty($this->field_onchange[$field]) ) {
+                $jsencoded = json_encode($this->field_onchange[$field]['mapping']);
+
+                if ($jsencoded === false )
+                    throw new Exception("onchange mapping $field cannot encode");
+
                 $rel_table = $this->field_onchange[$field]['rel_table'];
                 $controller = JsScript::instance()->add_var("/clientRequests/{$rel_table}");
-                $mapping = JsScript::instance()->add_var(json_encode($this->field_onchange[$field]['mapping']));
+                $mapping = JsScript::instance()->add_var($jsencoded);
                 JsScript::instance()->var('token', $ajax_token);
                 $onchange = " onchange=\"form_field_onchange(this, $controller, $mapping, token)\"";
             }
@@ -587,14 +632,14 @@ class DbCrud {
         $btn_bar = [];
 
         if ( $action == 'show' ) {
-            $btn_bar['names'] = ['back'];
+            $btn_bar['names'] = ['mainform-back'];
             $btn_bar['values'] = [$this->form_back];
             $btn_bar['onclicks'] = [$backlink];
             $btn_bar['types'] = ['button'];
             $btn_bar['strings'] = ['class="btn btn-secondary"'];
         }
         else {
-            $btn_bar['names'] = ['save','back'];
+            $btn_bar['names'] = ['mainform-save','back'];
             $btn_bar['values'] = [$this->form_save,$this->form_back];
             $btn_bar['onclicks'] = ['', $backlink];
             $btn_bar['types'] = ['submit','button'];
@@ -618,7 +663,7 @@ class DbCrud {
                     }
                 }
     
-            $btn_bar['names'][] = 'delete';
+            $btn_bar['names'][] = 'mainform-delete';
             $btn_bar['values'][] = $this->form_delete;
             $btn_bar['onclicks'][] = $deletelink;
             $btn_bar['types'][] = 'button'; // type submit not allowed here
@@ -634,11 +679,30 @@ class DbCrud {
                 $btn_bar['strings'][] =  'class="btn btn-success"';
                 $btn_bar['onclicks'][] = helper::url()."/$controller/$method/$link_id";
             }
+
+            if ( !empty($this->subform) ) { // add button to enable subform mechanism
+                $value = $this->subform['button_value'];
+                $btn_bar['names'][] = 'btn-subform';
+                $btn_bar['values'][] = $value;
+                $btn_bar['types'][] =  'button';
+                $btn_bar['strings'][] =  'class="btn btn-success"';
+                $btn_bar['onclicks'][] = "$grid_to/edit/$id?subform=true";;
+            }
         }
 
-        $form->button_bar($btn_bar['names'],$btn_bar['values'],$btn_bar['onclicks'],$btn_bar['types'],$btn_bar['strings'],);
+        $form->button_bar($btn_bar['names'],$btn_bar['values'],$btn_bar['onclicks'],$btn_bar['types'],$btn_bar['strings']);
+        $form->fieldset_close();
 
-        return '<div id="dbc-container">'.$form->render().'</div>'.JsScript::instance()->generate();
+        if ( !empty($this->rows) )
+            $form->layout_grid($this->rows);
+
+        if ( $subform_requested ) {
+            $subform = '<div>'.call_user_func($this->subform['callback'], $id).'</div>';
+        }
+        else
+            $subform = '';
+
+        return '<div id="dbc-container">'.$form->render().$subform.'</div>'.JsScript::instance()->generate();
     }
 
     /**

@@ -31,10 +31,11 @@ class Settings extends BaseController {
         $form->text('invoice_footer', ['value'=>$this->get_value('invoice_footer')]);
         $form->text('default_currency', ['value'=>$this->get_value('default_currency','USD')]);
         $form->number('default_tax', ['value'=>$this->get_value('default_tax', 0), 'min'=>0]);
+        $form->checkbox('print_constraint', ['label'=>'Printed invoices cannot be changed', 'checked'=>$this->get_value('print_constraint', 'true') == 'true']);
         $form->html('<br>')->button('submit', '<i class="bi bi-check-circle"></i> save', '', 'submit');
  
         if ( $form->submitted() ) {
-            $data = $form->validate('company_name,company_adress,company_email,invoice_footer,default_currency,default_tax');
+            $data = $form->validate('company_name,company_adress,company_email,invoice_footer,default_currency,default_tax,print_constraint');
 
             if ( $data === false ) // caused by csrf check, honypot or timer check
                 $form->message('something went wrong');
@@ -46,6 +47,7 @@ class Settings extends BaseController {
                 Helper::transient('invoice_footer', $data['invoice_footer']);
                 Helper::transient('default_currency', $data['default_currency']);
                 Helper::transient('default_tax', $data['default_tax']);
+                Helper::transient('print_constraint', is_null($data['print_constraint']) ? 'false' : 'true');
             }
         }
 

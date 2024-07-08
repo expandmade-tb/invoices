@@ -7,7 +7,7 @@ use PDOStatement;
 
 /**
  * base class for Flatfiles
- * Version 1.0.3
+ * Version 1.0.4
  * Author: expandmade / TB
  * Author URI: https://expandmade.com
  */
@@ -60,6 +60,10 @@ class DbFlat {
     }
 
     public function lastInsertId(?string $name = null): string|false {
+        return false;
+    }
+
+    public function prepare(string $query, array $options = []): PDOStatement|false {
         return false;
     }
 

@@ -19,6 +19,7 @@ class Customers extends BaseController {
         $this->crud->gridFields('CustomerId,Name,Email,Phone');
         $this->crud->addFields('Name,Adress,Email,Phone');
         $this->crud->editFields('CustomerId,Name,Adress,Email,Phone');
+        $this->crud->searchFields('Name,Email');
         $this->crud->fieldTitles('CustomerId','Customer No');
         $this->crud->fieldType('Adress', 'textarea', '', 4);
         $this->crud->setContstraints('CustomerId', 'Invoices', 'CustomerId');

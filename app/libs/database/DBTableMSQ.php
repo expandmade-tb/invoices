@@ -2,7 +2,7 @@
 
 /**
  * base class for mysql database tables
- * Version 1.11.0
+ * Version 1.11.2
  * Author: expandmade / TB
  * Author URI: https://expandmade.com
  */
@@ -334,7 +334,7 @@ class DBTableMSQ implements IDBTable, IDBView {
         if ( empty($select) )
             $sql = "SELECT * $include_rowid FROM $this->name ";
         else
-            $sql = preg_replace('/[\n ]+from /i', $include_rowid.' from ', $select);
+            $sql = preg_replace('/\bfrom/i', $include_rowid.' from ', $select);
 
         $params = $prepared_params;
 
@@ -385,6 +385,8 @@ class DBTableMSQ implements IDBTable, IDBView {
 
         if ( empty($select) )
             $sql = "SELECT $column FROM $this->name ";
+        else
+            $sql = "$select FROM $this->name ";
 
         if ( !empty($this->where_str) ) 
             $sql .= " WHERE $this->where_str";

@@ -2,7 +2,7 @@
 
 /**
  * Auth Controller
- * Version 1.4.0
+ * Version 1.7.1
  * Author: expandmade / TB
  * Author URI: https://expandmade.com
  */
@@ -16,6 +16,7 @@ use mail\Email;
 use helper\Session;
 use helper\CryptStr;
 use helper\UrlVars;
+use models\user_clients_model;
 use models\users_model;
 use Router\Router;
 
@@ -33,9 +34,17 @@ class Auth extends BaseController {
         ];
 
         $this->data['js_files'] = [
-            JAVASCRIPT.'/ident.min.js',
             "https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
         ];
+
+        switch (Helper::env('FPVersion', 'default' )) {
+            case '1':
+                $this->data['js_files'][] = JAVASCRIPT.'/ident.min.js';
+                break;
+            default:
+                $this->data['js_files'][] = JAVASCRIPT.'/ident-local.min.js';
+                break;
+        }
 
         $this->data['icon'] = IMAGES.Helper::env('app_image');
         $this->data['title'] = Helper::env('app_title', 'Remote Tables');
@@ -63,7 +72,6 @@ class Auth extends BaseController {
     private function render_form() : string  {
         header('Strict-Transport-Security: max-age=15768000; includeSubDomains; preload');
         header('X-XSS-Protection: 1; mode=block');
-        header('X-Content-Type-Options: nosniff');
         header('X-Frame-Options: Sameorigin');
         header('Referrer-Policy: same-origin');
   
@@ -111,7 +119,7 @@ class Auth extends BaseController {
         return $result;
     }
 
-    // filters and validates ajax requests
+    // filtersdebug  and validates ajax requests
     private function ajax_filter (string $input) : mixed {
         // check if ajax is used
         if ( !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) != 'xmlhttprequest') 
@@ -158,14 +166,24 @@ class Auth extends BaseController {
         $location = Helper::env('tmp_location');
         $aname = strtolower(str_replace(' ','_', Helper::env('app_title')));
         $uname = strtolower(str_replace(' ','_', $user['Name']));
-        $filename = "$location/$aname-$uname.html";
-        $param = ['uid'=>$user['UserId'], 'expire'=>time()+86400];
+        $id = $user['UserId'];
+        $filename = "$location/$aname-$uname-$id.html";
+        
+        $param = [
+            'uid'=>$user['UserId'],
+            'cid'=>$user['ClientId'],
+            'exp'=>time()+86400
+        ];
 
         if ( Helper::env('debug', '') )
             Helper::log(['registration: ', $param]);
 
         $uv = new UrlVars();
-        $regParam = $uv->set_header(Helper::env('app_identifier'), 86400)->set_secret(Helper::env('app_secret'))->encode($param, true);
+
+        $regParam = $uv->set_header(Helper::env('app_identifier'), 86400)
+                       ->set_secret(Helper::env('app_secret'))
+                       ->encode($param, true);
+        
         $href = Helper::url().'/'.Router::instance()->getAuth().'/register/'.$regParam;
         $contents = '<!DOCTYPE html><html><body><h1>Finish registration</h1><a href="'.$href.'">Register</a></body></html>';
         $result = file_put_contents($filename, $contents);
@@ -258,6 +276,7 @@ class Auth extends BaseController {
         $key_code = Helper::env('key_code', 'invalid value');
         $file_key_code = $array["key_code"]??'unknown';
         $file_user_id =  $array["user_id"]??'unknown';
+        $user_clients = new user_clients_model();
         $users = new users_model();
 
         if ( $users->count() == 0 ) // if no users at all, check for the environment key_code 
@@ -281,14 +300,17 @@ class Auth extends BaseController {
         if ( defined('REGISTER') ) { // register a new client id with the given key code
             $users->update($file_user_id, ['ClientId'=>session::instance()->get('client_id')]);
             $this->user_id = $file_user_id; // we have got a validated user...yeah
+            $user_clients->add($file_user_id, session::instance()->get('client_id')); 
             return '';
         }
 
-        if ( $user['ClientId'] != session::instance()->get('client_id') ) {
+        $result = $user_clients->where('UserId', $file_user_id)
+                               ->where('ClientId', session::instance()->get('client_id'))
+                               ->findFirst();
 
-            if ( substr($user['ClientId'], -13) != '-not_verified' ) 
-                $this->create_registration($user);
-    
+        if ( count($result) == 0 ) {
+            $user['ClientId'] = session::instance()->get('client_id');
+            $this->create_registration($user);
             $this->lockout('invalid client id: '.session::instance()->get('client_id'), 300);
         }
 
@@ -349,21 +371,25 @@ class Auth extends BaseController {
         if ( $uv->set_header(Helper::env('app_identifier'), 86400)->set_secret(Helper::env('app_secret'))->decode($param) === false )
             die('invalid request - scrambled param');
 
-        $user_id = $uv->get('uid','invalid user id');
-        $expires = $uv->get('expire', '0');
+        $user_id = $uv->get('uid','unknown user id');
+        $expires = $uv->get('exp', '0');
+        $client_id = $uv->get('cid','unknown client id');
 
-        if ( $expires < time() )
+        if ( $expires < time() ) // check if registration time hasnt passed
             die('invalid request - expired');
 
         $users = new users_model();
         $user = $users->find($user_id);
         
-        if ( $user === false)
+        if ( $user === false) // check if there is a valid user
             die('invalid request - invalid user');
 
-        if ( substr($user['ClientId'], -13) != '-not_verified' ) 
+        if ( substr($user['ClientId'], -13) != '-not_verified' ) // check if the registration is still in process 
             die('invalid request - already verified');
-           
+        
+        if ( str_replace('-not_verified', '', $user['ClientId']) != $client_id ) // check if client ids match
+            die('invalid request - client ids dont match');
+
         define('REGISTER', $user['ClientId']);
         $this->data['form'] = $this->render_form();
         $this->view('Auth');

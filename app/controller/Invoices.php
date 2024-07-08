@@ -16,18 +16,22 @@ class Invoices extends BaseController {
         $this->crud = new DbCrud(new invoices_model());
         $this->crud->grid_show = '<a class="btn btn-success btn-sm" href="[:script_name]/print/[:identifier]" role="button"><i class="bi bi-file-pdf"></i> Print</a>';
         $this->crud->grid_delete = '';
+        $this->crud->form_delete = '';
         $this->crud->limit = 15;
         $this->crud->gridSQL( $this->crud->model()->getSQL('invoices-crud') );
         $this->crud->gridFields('InvoiceId,Customer_Name,Invoice_Date,Due_Date,Payed_Date,Billing_Name');
         $this->crud->addFields('CustomerId,Invoice_Date,Due_Date,Currency,Tax,Billing_Name,Billing_Adress,Billing_Email,Instructions');
-        $this->crud->editFields('InvoiceId,CustomerId,Invoice_Date,Due_Date,Payed_Date,Currency,Tax,Billing_Name,Billing_Adress,Billing_Email,Instructions,Invoice_PDF');
-        $this->crud->readonlyFields('Invoice_PDF');
+        $this->crud->searchFields('Customer_Name,Invoice_Date,Due_Date,Payed_Date');
+        $this->crud->editFields('InvoiceId,Canceled,CustomerId,Invoice_Date,Due_Date,Payed_Date,Printed,Currency,Tax,Billing_Name,Billing_Adress,Billing_Email,Instructions');
         $this->crud->fieldTitles('InvoiceId,CustomerId,Customer_Name','Invoice No,Customer,Customer');
-        
+        $this->crud->readonlyFields('Printed');
+
         $this->crud->fieldType('Invoice_Date', 'datetext');
         $this->crud->fieldType('Due_Date', 'datetext');
         $this->crud->fieldType('Payed_Date', 'datetext');
+        $this->crud->fieldType('Printed', 'datetext');
         $this->crud->fieldType('Billing_Adress', 'textarea', '', 4);
+        $this->crud->fieldType('Canceled', 'checkbox');
 
         $this->crud->fieldPlaceholder('Billing_Name', 'leave blank to use customers name');
         $this->crud->fieldPlaceholder('Billing_Adress', 'leave blank to use customers adress');
@@ -60,6 +64,11 @@ class Invoices extends BaseController {
     }
 
     public function edit(string $id) : void {
+        $invoice = (object) $this->crud->model();
+
+        if ( $invoice->printed($id) )
+            $this->crud->readonlyFields('InvoiceId,CustomerId,Invoice_Date,Due_Date,Payed_Date,Currency,Tax,Billing_Name,Billing_Adress,Billing_Email,Instructions,Printed');
+
         $this->data['dbgrid'] = $this->crud->form('edit', $id);
         $this->view('Crud');
     }
@@ -87,20 +96,35 @@ class Invoices extends BaseController {
     }
 
     public function print(int $id) : void {
-        $file = GenerateInvoice::generate($id);
+        $invoice = (object) $this->crud->model();
 
-        if ( $file === false )
-            exit();
+        if ( ! $invoice->printed($id) ) {
+            $file = GenerateInvoice::generate($id);
+
+            if ( $file === false )
+                exit();
+ 
+            $invoice->update($id, ['Printed'=>time(), 'Invoice_PDF'=>$file]);
+        }
+        else {
+            $result = $invoice->find($id);
+
+            if ($result === false)
+                exit();
+
+            $file = $result['Invoice_PDF'];
+        }
             
-        $info = basename($file).' // printed: '.date($this->crud->date_fmt, time());
-        $this->crud->model()->update($id, ['Invoice_PDF'=>$info]);
-
-        header("Content-type: application/pdf");
-        header("Content-Length: " . filesize($file));
-        header('Content-Disposition: attachment; filename="' . "invoice$id.pdf" . '"');
-        header('Cache-Control: private');
-        
-        readfile($file);
+        try {
+            header("Content-type: application/pdf");
+            header("Content-Length: " . filesize($file));
+            header('Content-Disposition: attachment; filename="' . "invoice$id.pdf" . '"');
+            header('Cache-Control: private');
+            
+            readfile($file);
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
         
         exit();
    }

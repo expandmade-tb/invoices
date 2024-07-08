@@ -4,20 +4,22 @@ namespace database;
 
 /**
  * DDL creator class
- * Version 1.0.1
+ * Version 1.2.1
  * Author: expandmade / TB
  * Author URI: https://expandmade.com
  */
 
 class DbDDL {
     private static ?DbDDL $instance = null;
-    private string $table;
-    private string $primary_key;
-    private array $fields;
-    private array $foreign_keys;
-    private array $unique;
+    private string $table = '';
+    private string $primary_key = '';
+    private array $fields = [];
+    private array $foreign_keys = [];
+    private array $unique = [];
+    private array $unique_constraint = [];
+    private array $indexes = [];
 
-    protected function __construct(string $table) {
+    function __construct(string $table) {
         $this->table = $table;
     }
 
@@ -26,28 +28,49 @@ class DbDDL {
         return self::$instance;
     }
   
-    public function integer(string $name,  bool $not_null=false, bool $auto_increment=false, bool $unique=false) : DbDDL {
-        $this->fields[$name] = ['type'=>'integer', 'not_null'=>$not_null, 'auto_increment'=>$auto_increment, 'unique'=>$unique];
+    public function integer(string $name, bool $not_null=false, bool $auto_increment=false, bool $unique=false, ?int $default=null) : DbDDL {
+        $this->fields[$name] = ['type'=>'integer', 'not_null'=>$not_null, 'auto_increment'=>$auto_increment, 'unique'=>$unique, 'default'=>$default];
         return $this;
     }
 
-    public function text(string $name, int $size=255, bool $not_null=false, bool $unique=false) : DbDDL {
-        $this->fields[$name] = ['type'=>'text', 'size'=> $size,'not_null'=>$not_null, 'auto_increment'=>false, 'unique'=>$unique];
+    public function text(string $name, int $size=255, bool $not_null=false, bool $unique=false, ?string $default=null) : DbDDL {
+        if (!is_null($default))
+            $default = '"'.$default.'"';
+
+        $this->fields[$name] = ['type'=>'text', 'size'=> $size,'not_null'=>$not_null, 'auto_increment'=>false, 'unique'=>$unique, 'default'=>$default];
         return $this;
     }
 
-    public function real(string $name, bool $not_null=false) : DbDDL {
-        $this->fields[$name] = ['type'=>'real', 'not_null'=>$not_null, 'auto_increment'=>false, 'unique'=>false];
+    public function real(string $name, bool $not_null=false, ?float $default=null) : DbDDL {
+        $this->fields[$name] = ['type'=>'real', 'not_null'=>$not_null, 'auto_increment'=>false, 'unique'=>false, 'default'=>$default];
         return $this;
     }
 
     public function blob(string $name, bool $not_null=false) : DbDDL {
-        $this->fields[$name] = ['type'=>'blob', 'not_null'=>$not_null, 'auto_increment'=>false, 'unique'=>false];
+        $this->fields[$name] = ['type'=>'blob', 'not_null'=>$not_null, 'auto_increment'=>false, 'unique'=>false, 'default'=>null];
+        return $this;
+    }
+
+    public function datetime(string $name, bool $not_null=false, bool $unique=false, ?string $default=null) : DbDDL {
+        if (!is_null($default))
+            $default = '"'.$default.'"';
+        
+        $this->fields[$name] = ['type'=>'datetime', 'not_null'=>$not_null, 'auto_increment'=>false, 'unique'=>$unique, 'default'=>$default];
+        return $this;
+    }
+
+    public function numeric(string $name, bool $not_null=false, ?string $default=null) : DbDDL {
+        $this->fields[$name] = ['type'=>'numeric', 'not_null'=>$not_null, 'auto_increment'=>false, 'unique'=>false, 'default'=>$default];
         return $this;
     }
 
     public function unique(string $fields) : DbDDL {
         $this->unique[] = $fields;
+        return $this;
+    }
+
+    public function unique_constraint(string $fields) : DbDDL {
+        $this->unique_constraint[] = $fields;
         return $this;
     }
 
@@ -58,6 +81,19 @@ class DbDDL {
 
     public function foreign_key(string $fields, string $parent_table, string|array $primary_key) : DbDDL {
         $this->foreign_keys[$fields] = ['parent_table'=>$parent_table, 'primary_key'=>$primary_key];
+        return $this;
+    }
+
+    public function index(string $fields, string $index_name='') : DbDDL {
+        if (!empty($index_name)) {
+            $i = count($this->indexes) + 1;
+            $index_name = "idx_{$this->table}_$i";
+        }
+        else
+           $index_name = "idx_{$this->table}_1";
+
+
+        $this->indexes[$index_name] = $fields;
         return $this;
     }
 
@@ -104,7 +140,9 @@ class DbDDL {
 
             if ( $values['auto_increment'] === true ) {
                 $auto_increment = ' AUTO_INCREMENT';
-                $this->primary_key($field);
+
+                if (empty($this->primary_key))
+                    $this->primary_key($field);
             }
             else
                 $auto_increment = '';
@@ -112,7 +150,8 @@ class DbDDL {
             if ( $values['unique'] === true )
                 $this->unique($field);
 
-            $sql .= "{$field} {$type}{$not_null}{$auto_increment}, ";
+            $default = is_null($values['default']) ? '' : " DEFAULT {$values['default']}";
+            $sql .= "{$field} {$type}{$not_null}{$default}{$auto_increment}, ";
         }
 
         if ( !empty($this->primary_key) )
@@ -122,6 +161,12 @@ class DbDDL {
             foreach ($this->unique as $key => $value)
                 $sql .= "UNIQUE($value), ";
 
+        if ( !empty($this->unique_constraint) )
+            foreach ($this->unique_constraint as $key => $value) {
+                $constraint_name = "{$this->table}_constraint{$key}";
+                $sql .= "CONSTRAINT $constraint_name UNIQUE ($value), ";
+            }
+        
         if ( !empty($this->foreign_keys) )
             foreach ($this->foreign_keys as $key => $value) {
                 $parent_table = $value['parent_table'];
@@ -130,6 +175,16 @@ class DbDDL {
             }
             
         $sql = substr($sql, 0, -2).')';
+
+        if (!empty($this->indexes)) {
+            $sql .= ';';
+
+            foreach ($this->indexes as $index => $fields) {
+                $table = $this->table;
+                $sql .= "CREATE INDEX $index ON $table ($fields);";
+            }
+        }
+
         return $sql;
     }
 
@@ -139,9 +194,17 @@ class DbDDL {
         foreach ($this->fields as $field => $values) {
             $type = strtoupper($values['type']);
             $not_null = $values['not_null'] === true ? ' NOT NULL' : '';
-            $auto_increment = $values['auto_increment'] === true ? ' PRIMARY KEY AUTOINCREMENT' : '';
             $unique = $values['unique'] === true && empty($auto_increment) ? ' UNIQUE' : '';
-            $sql .= "{$field} {$type}{$not_null}{$auto_increment}{$unique}, ";
+            $default = is_null($values['default'])  ? '' : " DEFAULT {$values['default']}";
+
+            if ( $values['auto_increment'] === true ) {
+                $this->primary_key("$field AUTOINCREMENT");
+                $not_null = '';
+            }
+             else
+                $auto_increment = '';
+
+            $sql .= "{$field} {$type}{$not_null}{$default}{$unique}, ";
         }
 
         if ( !empty($this->primary_key) )
@@ -151,6 +214,12 @@ class DbDDL {
             foreach ($this->unique as $key => $value)
                 $sql .= "UNIQUE($value), ";
 
+        if ( !empty($this->unique_constraint) )
+            foreach ($this->unique_constraint as $key => $value) {
+                $constraint_name = "{$this->table}_constraint{$key}";
+                $sql .= "CONSTRAINT $constraint_name UNIQUE ($value), ";
+            }
+    
         if ( !empty($this->foreign_keys) )
             foreach ($this->foreign_keys as $key => $value) {
                 $parent_table = $value['parent_table'];
@@ -159,6 +228,16 @@ class DbDDL {
             }
             
         $sql = substr($sql, 0, -2).')';
+
+        if (!empty($this->indexes)) {
+            $sql .= ';';
+            
+            foreach ($this->indexes as $index => $fields) {
+                $table = $this->table;
+                $sql .= "CREATE INDEX $index ON $table ($fields);";
+            }
+        }
+
         return $sql;
     }
 

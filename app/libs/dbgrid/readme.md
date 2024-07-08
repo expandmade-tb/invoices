@@ -1,9 +1,44 @@
 # DbCRUD for SQLite / mySQL
 
-A simple Database CRUD
+A Database CRUD Class
+
+# Overview
+
+| function | description
+|---|---
+|addFields|Fields to be used on the Form when adding data.
+|callbackDelete|A function to be called when a row has be deleted
+|callbackInsert|A function to be called when a row has to be inserted
+|callbackUpdate|A function to be called when a row has to be updated
+|clear|Clears the grids search value and executes a new select
+delete|Deletes the *id* of the current grid table
+editFields|Fields to be used on the Form when editing data
+encode_identifier|Encodes the *id* of a row when used in the URI
+fieldOnChange|Set a javascript function which should be called on change for the given field
+fieldPlaceholder|Set the placeholder for the given field
+fieldTitles|Set the field title for the given fields
+fieldType|Field type are automatically detected. Using this method will overwrite the field type found
+fields|A shortcut to call addFields, editFields, gridFields and fieldTitles
+form|shows a form
+formatField|Callback function to format field
+grid|Shows the grid
+gridFields|Set the fields which should be shown in the grid
+linkedTable|Adds an additional buttom to the form and links it to the depending table controller and method.
+model|Returns the current table model used in the grid
+readFields|Sets the field shown in the form when action button *show* has been selected.
+readonlyFields|Sets all readonly fields in the form.
+requiredFields|Sets all the required fields in the form
+searchFields|Set all fields which can be searched/filtered.
+setContstraints|Checks a deletion constraint
+setRelation|Set a relation 1-n database relation.
+setRule|Add a validation rule to the given field
+setSearchRelation|Set a relation 1-n database relation
+
+___
 
 # Properties
 
+- [Overview](#Overview)
 - [Methods](#methods)
 - [Controller](#controller)
 - [Example](#example)
@@ -94,6 +129,7 @@ Use sessions or cookie (default).
 
 # Methods
 
+- [Overview](#Overview)
 - [Properties](#properties)
 - [Controller](#controller)
 - [Example](#example)
@@ -163,7 +199,7 @@ Encodes the *id* of a row when used in the URI.
 ___
 ## fieldOnChange
 ```PHP
-    public function fieldOnChange(string $field, string $js_function)
+    public function fieldOnChange(string $field, string $rel_table, array $mapping)
 ```
 
 Set a javascript function which should be called on change for the given field.
@@ -184,7 +220,7 @@ Set the field titles for the given fields.
 ___
 ## fieldType
 ```PHP
-    public function fieldType (string $field, string $type, string $valuelist='')
+    public function fieldType (string $field, string $type, string $valuelist='', int $rows=2, int $cols=40)
 ```
 
 Field type are automatically detected. Using this method will overwrite the field type found. Currently the following field types are supported:
@@ -198,6 +234,8 @@ Field type are automatically detected. Using this method will overwrite the fiel
 + select
 + text
 + textarea
++ timetext
++ grid
 ___
 ## fields
 ```PHP
@@ -208,8 +246,8 @@ Calls the following methods:
 
 + addFields
 + editFields
-+ readFields
 + gridFields
++ readFields
 + fieldTitles
 ___
 ## form
@@ -313,7 +351,7 @@ Add a validation rule to the given field.
 ___
 ## setSearchRelation
 ```PHP
-    public function setSearchRelation(string $field, string $relatedTable, string $relatedField) {
+    public function setSearchRelation(string $field, string $relatedTable, string $relatedField, bool $constraint=true) {
 ```
 
 Set a relation 1-n database relation. This will automatically create a live search to the field and show the actual value of the field and not just a primary key.
@@ -321,6 +359,7 @@ ___
 
 # Controller
 
+- [Overview](#Overview)
 - [Properties](#properties)
 - [Methods](#methods)
 - [Example](#example)
@@ -332,7 +371,7 @@ All methods are requested if they are needed. The only mandatory method is *grid
 ```PHP
     public function grid(int $page) {
         $this->data['dbgrid'] = $this->crud->grid($page);
-        $this->view('Crud', $this->data);
+        $this->view('Crud');
     }
 ```
 
@@ -341,24 +380,147 @@ Other methods have to be implemented if you allow to *add*, *edit*, *delete* and
 ```PHP
    public function add() { 
         $this->data['dbgrid'] = $this->crud->form('add');
-        $this->view('Crud', $this->data);
+        $this->view('Crud');
     }
 
     public function edit($id) {
         $this->data['dbgrid'] = $this->crud->form('edit', $id);
-        $this->view('Crud', $this->data);
+        $this->view('Crud');
     }
 
     public function delete($id) {
-        $this->crud->delete($id);
-        $this->data['dbgrid'] = $this->crud->grid();
-        $this->view('Crud', $this->data);
+        $result = $this->crud->delete($id);
+
+        if ( $result === false )
+            $this->data['dbgrid'] = $this->crud->grid();
+        else
+            $this->data['dbgrid'] = $this->crud->grid($result);
+        
+        $this->view('Crud');
     }
 
     public function clear() {
         $this->crud->clear();
         $this->data['dbgrid'] = $this->crud->grid();
-        $this->view('Crud', $this->data);
+        $this->view('Crud');
+    }
+```
+___
+
+## Callback Methods
+
+### Callback on deletion of a row
+Set:
+```PHP
+    $this->crud->callbackDelete([$this, 'example_row_delete']);
+```
+Format:
+```PHP
+    public function example_row_delete($did) {
+        // code to delete the data
+    }
+```
+___
+
+### Callback on formatting a value
+Set:
+```PHP
+    $this->crud->formatField('example_field', [$this, 'example_field_formatting']);
+```
+Format:
+```PHP
+    public function example_field_formatting(string $field, string $source, string $value) : string {
+        // code to format the field
+    }
+```
+___
+
+### Callback on inserting a row
+Set:
+```PHP
+    $this->crud->callbackInsert([$this, 'example_row_insert']);
+```
+Format:
+```PHP
+    public function example_row_insert($data) {
+        // code to insert the data
+    }
+```
+___
+
+### Callback on field validation
+Set:
+```PHP
+    $this->crud->rule('example_field', [$this, 'example_field_validate']);
+```
+Format:
+```PHP
+    public function example_field_validate($value, $field) : string {
+        // code to validate the field
+    }
+```
+___
+### Callback on updating a row
+
+Set:
+```PHP
+    $this->crud->callbackUpdate([$this, 'example_row_update']);
+```
+
+Format:
+```PHP
+    public function example_row_update($id, $data) {
+        // code to update the data
+    }
+```
+___
+
+# Controller
+
+- [Overview](#Overview)
+- [Properties](#properties)
+- [Methods](#methods)
+- [Example](#example)
+
+## Public Methods to be implemented
+
+All methods are requested if they are needed. The only mandatory method is *grid*:
+
+```PHP
+    public function grid(int $page) {
+        $this->data['dbgrid'] = $this->crud->grid($page);
+        $this->view('Crud');
+    }
+```
+
+Other methods have to be implemented if you allow to *add*, *edit*, *delete* and *search* columns:
+
+```PHP
+   public function add() { 
+        $this->data['dbgrid'] = $this->crud->form('add');
+        $this->view('Crud');
+    }
+
+    public function edit($id) {
+        $this->data['dbgrid'] = $this->crud->form('edit', $id);
+        $this->view('Crud');
+    }
+
+    public function delete($id) {
+        $result = $this->crud->delete($id);
+
+        if ( $result === false )
+            $this->data['dbgrid'] = $this->crud->grid();
+        else
+            $this->data['dbgrid'] = $this->crud->grid($result);
+        
+        $this->view('Crud');
+    }
+
+    public function clear() {
+        $this->crud->clear();
+        $this->data['dbgrid'] = $this->crud->grid();
+        $this->view('Crud');
     }
 ```
 ___
@@ -433,6 +595,7 @@ ___
 
 # Example
 
+- [Overview](#Overview)
 - [Properties](#properties)
 - [Methods](#methods)
 - [Controller](#controller)
@@ -443,85 +606,91 @@ ___
 namespace controller;
 
 use dbgrid\DbCrud;
-use helper\Helper;
-use Menu\MenuBar;
-use models\track_model;
+use helper\Session;
+use models\invoices_details_model;
+use models\products_model;
+use Router\Router;
 
-class CrudTrack extends BaseController {
+class InvoicesDetails extends BaseController {
     private DbCrud $crud;
 
     function __construct() {
-        $this->data['css_files'] = [
-            STYLESHEET.'/styles.css',
-            'https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css'            
-        ];
-        $this->data['js_files'] = [
-            "https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js",
-            JAVASCRIPT.'/livesearch.js'
-        ];
-        
-        $this->data['icon'] = IMAGES.Helper::env('app_image');
-        $this->data['title'] = Helper::env('app_title', 'Remote Tables');
-        $this->data['menu'] = MenuBar::factory()->get();
-        $this->crud = new DbCrud(new track_model());
-
-        // crud customization 
+        parent::__construct();
+       
+        $this->crud = new DbCrud(new invoices_details_model());
         $this->crud->grid_show = '';
-        $this->crud->grid_sql = 
-        'select
-            Track.Name as TrackName,
-            Album.Title as AlbumTitle, 
-            MediaType.Name as MediaTypeName,
-            Genre.Name as GenreName,
-            Composer,
-            Milliseconds,
-            UnitPrice,
-            Title
-        from Track 
-            left join Album on Track.AlbumId = Album.AlbumId 
-            left join MediaType on Track.MediaTypeId = MediaType.MediaTypeId
-            left join Genre on Track.GenreId = Genre.GenreId';
+        $this->crud->grid_search = '';
+        $this->crud->form_delete = '';
+        $this->crud->limit = 15;
+        $this->crud->callbackInsert([$this, 'onInsert']);
+        $this->crud->editFields('ProductId,Qty,Price');
+        $this->crud->addFields('ProductId,Qty,Price');
+        $this->crud->gridFields('Item,Qty,Price');
+        $this->crud->fieldValue('Qty', 1);
+        $this->crud->setRelation('ProductId', 'Item', 'Products');
+        $this->crud->fieldOnChange('ProductId', 'ProductsByItem', ['Price'=>'Price']);
+        $this->crud->fieldTitles('ProductId,Item,Qty,Price','Product,Item,Qty,Price');
+        $this->crud->fieldPlaceholder('Price', 'leave blank to accept original product price');
+    }
+
+    private function filter() : void {
+        $invoice_id = Session::instance()->get('invoicedetails', -1);
+        $this->crud->gridSQL( $this->crud->model()->getSQL('invoicedetails-crud-filter'), [$invoice_id]);
+        $url = Router::instance()->url();
+        $this->crud->grid_title = "Items for <a href=\"$url/invoices/edit/$invoice_id\">Invoice no. $invoice_id</a>"; // gets back to the invoice
+    }
     
-        $this->crud->gridFields('TrackName,AlbumTitle,MediaTypeName,GenreName,Milliseconds,UnitPrice,Composer,Title');
+    public function onInsert(array $data) : void {
+        $invoice_id = Session::instance()->get('invoicedetails', -1);
 
-        $this->crud->fieldTitles('TrackName,AlbumTitle,MediaTypeName,GenreName,Milliseconds,UnitPrice,Composer,Title',
-                                 'Track,Album,MediaType,Genre,Milliseconds,Unit Price,Composer,Title');
+        if ( empty($data['Price']) ) {
+            $products = new products_model();
+            $result = $products->find($data['ProductId']??'');
+            $data['Price'] = $result['Price'];
+        }
 
-        $this->crud->searchFields('TrackName,MediaTypeName,Composer,Title');
-
-        $this->crud->setRelation('GenreId', 'Name', 'Genre');
-        $this->crud->setRelation('MediaTypeId', 'Name', 'MediaType');
-        $this->crud->setSearchRelation('AlbumId', 'Album', 'Title');
+        $data['InvoiceId'] = $invoice_id;
+        $this->crud->model()->insert($data);
     }
 
-    public function index () {
-       $this->grid(1);
+    public function index () : void {
+        $this->filter();
+        $this->grid(1);
     }
 
-    public function add() {
+    public function selectinvoice(int $invoice_id) : void {
+        Session::instance()->set('invoicedetails', $invoice_id);
+        $this->index();
+    }
+
+    public function add() : void {
+        $this->filter();
         $this->data['dbgrid'] = $this->crud->form('add');
-        $this->view('Crud', $this->data);
+        $this->view('Crud');
     }
 
-    public function edit($id) {
+    public function edit(string $id) : void {
+        $this->filter();
         $this->data['dbgrid'] = $this->crud->form('edit', $id);
-        $this->view('Crud', $this->data);
+        $this->view('Crud');
     }
 
-    public function delete($id) {
-        $this->crud->delete($id);
-        $this->data['dbgrid'] = $this->crud->grid();
-        $this->view('Crud', $this->data);
+    public function delete(string $id) : void {
+        $result = $this->crud->delete($id);
+        $this->filter();
+
+        if ( $result === false )
+            $this->data['dbgrid'] = $this->crud->grid();
+        else
+            $this->data['dbgrid'] = $this->crud->grid($result);
+        
+        $this->view('Crud');
     }
 
-    public function grid(int $page) {
+    public function grid(int $page) : void {
+        $this->filter();
         $this->data['dbgrid'] = $this->crud->grid($page);
-        $this->view('Crud', $this->data);
+        $this->view('Crud');
     }
-
-    public function clear() {
-        $this->crud->clear();
-        $this->data['dbgrid'] = $this->crud->grid();
-        $this->view('Crud', $this->data);
-    }
-}```
+}
+```

@@ -13,7 +13,7 @@ class Routes {
         'customers' => ['GET|POST|Customers', 'index,add,edit,delete,grid,clear'],
         'products' => ['GET|POST|Products', 'index,add,edit,delete,grid,clear'],
         'invoices' => ['GET|POST|Invoices', 'index,add,edit,delete,grid,clear,print'],
-        'InvoicesDetails' => ['GET|POST|InvoicesDetails', 'index,add,edit,delete,grid,selectinvoice'],
+        'InvoicesDetails' => ['GET|POST|InvoicesDetails', 'index,add,edit,delete,grid,selectinvoice,show'],
         'currencies' => ['GET|POST|Currencies', 'index,add,edit,delete,grid,clear'],
         'auth' => ['GET|POST|Auth', 'index,unlock,logout,register,ajax_client_id'],
         'users' => ['GET|POST|Users', 'index,add,edit,delete,grid,clear,show'],

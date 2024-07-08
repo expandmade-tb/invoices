@@ -2,7 +2,7 @@
 
 /**
  * Grid for database tables
- * Version 1.1.1
+ * Version 1.2.0
  * Author: expandmade / TB
  * Author URI: https://expandmade.com
  */
@@ -104,6 +104,9 @@ class DbGrid {
     public function fieldType (string $field, string $type, string $valuelist='', int $rows=2, int $cols=40) : DbGrid {
         if ( !in_array($type, ['text', 'integer', 'numeric', 'checkbox', 'select', 'date', 'datetext', 'datetime', 'datalist', 'textarea', 'timetext','grid']) )
             throw new Exception("unsupported field type $type");
+      
+        if ( $type == 'checkbox' && empty($valuelist ) )
+            $valuelist = '0,1';
             
         if ( in_array($type, ['grid','textarea']) )
             $this->field_types[$field] = ['type'=>$type, 'values'=>$valuelist, 'rows'=>$rows, 'cols'=>$cols];

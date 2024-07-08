@@ -23,5 +23,5 @@ $app_secret='7cc3a4b766d896d355ce6d9243957218';
 $app_identifier='da1ae2e3935bfc277da9ee54cdd45445';
 $key_code='76e90252c70a3a05b89c994123050d3b77523a952114dbcdac3cf67b7cc1a130';
 $upgrade_code='e1ee3439ad7ab297';
-$debug=false;
+$debug=true;
 $invoice_color='#007fff';

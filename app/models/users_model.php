@@ -17,6 +17,7 @@ class users_model extends DBTable {
 			->integer('ValidUntil')
 			->text('ClientId')
 			->integer('AccessControl')
+			->integer('RoleId')
 			->primary_key('UserId');
     }
 }

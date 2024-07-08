@@ -6,6 +6,6 @@ SELECT
 FROM
 	InvoicesDetails
 LEFT JOIN 
-	Products on Products.ProductId = InvoicesDetails.InvoiceDetailId
+	Products on Products.ProductId = InvoicesDetails.ProductId
 WHERE
 	InvoiceId = ?
