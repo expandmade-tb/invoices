@@ -16,7 +16,6 @@ class Invoices extends BaseController {
         $this->crud = new DbCrud(new invoices_model());
         $this->crud->grid_show = '<a class="btn btn-success btn-sm" href="[:script_name]/print/[:identifier]" role="button"><i class="bi bi-file-pdf"></i> Print</a>';
         $this->crud->grid_delete = '';
-        $this->crud->form_delete = '';
         $this->crud->limit = 15;
         $this->crud->gridSQL( $this->crud->model()->getSQL('invoices-crud') );
         $this->crud->gridFields('InvoiceId,Customer_Name,Invoice_Date,Due_Date,Payed_Date,Billing_Name');

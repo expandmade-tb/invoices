@@ -5,8 +5,8 @@ A simple, lightweight web application to manage customer data and products and c
 Although this is a feasibility study for fast web development, the application is fully functional and can be easily extended.
 
 The application runs on both SQLite and MySQL databases. If web connectivity is not desired, the application can also run on a local computer using PHP's own built-in-server.
- 
-[Demo without login](http://invoice.expandmade.com/) (no login needed)
+
+[Demo without login](http://invoice.expandmade.com/) 
 
 ## Installation
 
@@ -62,8 +62,12 @@ For **SQLite** you do not need to do anything else. The corresponding database i
 
 For **MySQL** you enter your domain with the addition *"/init "*. For example, if your domain is *"example.com "* then enter *"example.com/init "*.  The browser should then display
 
-creating models...
-creating models succesfull
+*creating models...*
+*creating models succesfull*
+
+You can only init the application once. Trying to execute init twice or more will display:
+
+*application already initialized*
 
 ## Login
 The application uses a keycode file instead of the classic user/password login, which is stored either on the client or on a USB stick. The keycode file is associated with both the client and the user - so no other client can use the keycode file to log in.
@@ -96,7 +100,7 @@ If you need more users, just create a new one and proceed as described before.
 If you dont mind a login at all, because you run the application on a local computer with no public access, you can change the following lines in the file "index.php" in the public folder:
 
 #### 1. Login required
-  
+
 ```PHP
 // login required
 Router::instance()->setAuth('auth', [Helper::class,'is_logged_in'] )->run();
@@ -107,7 +111,7 @@ Router::instance()->setAuth('auth', [Helper::class,'is_logged_in'] )->run();
 ```
 
 #### 2. NO Login
-  
+
 ```PHP
 // login required
 //Router::instance()->setAuth('auth', [Helper::class,'is_logged_in'] )->run();
@@ -129,6 +133,7 @@ If you want to extend the application, set:
 3. add a new menu item in "app\libs\menu
 4. add a new route in "app\libs\Routes
    
+
 Details about the usage of "DBCrud" can be found in "app\libs\dbgrid\readme.md" and "Formbuilder" in "app\libs\Formbuilder\readme.md".
 
 #### How can i change the invoice company log

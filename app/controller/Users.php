@@ -2,7 +2,7 @@
 
 /**
  * Users Maintenance Controller
- * Version 1.3.0
+ * Version 1.3.1
  * Author: expandmade / TB
  * Author URI: https://expandmade.com
  */
@@ -102,8 +102,8 @@ class Users extends BaseController {
     }
 
     public function delete(string $id) : void {
-        if ( $id == Session::instance()->get('user_id', 'unkwonw') ) 
-            $this->data['dbgrid'] = $this->crud->form('edit', $id, 'you can NOT delete yourself');
+        if ( $id == Session::instance()->get('user_id', 'unkwonw') || $this->crud->rowcount() == 1 ) 
+            $this->data['dbgrid'] = $this->crud->form('edit', $id, 'you can NOT delete this user');
         else {
             $user_clients = new user_clients_model();
             $user_clients->delete_all($id);
